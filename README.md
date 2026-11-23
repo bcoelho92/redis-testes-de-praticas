@@ -31,6 +31,7 @@ Este projeto aborda 4 padrões comuns de uso do Redis no dia a dia de engenharia
 - **redis-py** (cliente assíncrono `redis.asyncio`)
 - **Poetry** (gerenciador de dependências e ambiente)
 - **Docker & Docker Compose** (Redis 7 Alpine + container da API)
+- **GNU Make** (atalhos de produtividade para desenvolvimento e inspeção)
 
 ---
 
@@ -47,9 +48,33 @@ Este projeto aborda 4 padrões comuns de uso do Redis no dia a dia de engenharia
 ├── docker-compose.yml        # Orquestração do Redis e da API
 ├── Dockerfile                # Imagem de build da API
 ├── main.py                   # Ponto de entrada do FastAPI
+├── Makefile                  # Comandos e atalhos rápidos do projeto
 ├── pyproject.toml            # Configuração e dependências Poetry
 └── README.md
 ```
+
+---
+
+## ⚡ Atalhos Rápidos com Make
+
+O projeto inclui um `Makefile` com comandos utilitários para facilitar o ciclo de desenvolvimento e estudos do Redis:
+
+| Comando | Descrição |
+| :--- | :--- |
+| `make help` | Exibe a lista de todos os comandos disponíveis formatados |
+| `make up` | Sobe todos os containers em segundo plano |
+| `make up-build` | Reconstrói e sobe os containers |
+| `make down` | Para e remove os containers |
+| `make logs` | Visualiza logs unificados em tempo real |
+| `make logs-api` | Visualiza logs específicos da API FastAPI |
+| `make logs-redis` | Visualiza logs específicos do Redis |
+| `make ps` | Mostra o status dos containers |
+| `make redis-cli` | **Abre o terminal interativo `redis-cli`** |
+| `make redis-monitor` | **Monitora em tempo real todos os comandos que chegam ao Redis** |
+| `make flush-redis` | **Limpa todas as chaves e dados do Redis (FLUSHALL)** |
+| `make redis-up` | Sobe apenas o Redis (para rodar a API localmente) |
+| `make run-local` | Inicia o servidor FastAPI local com hot-reload |
+| `make clean` | Limpa arquivos temporários e caches `__pycache__` |
 
 ---
 
@@ -60,43 +85,78 @@ Este projeto aborda 4 padrões comuns de uso do Redis no dia a dia de engenharia
 
 ---
 
-### Opção 1: Via Docker Compose (Recomendado)
+### Opção 1: Via Docker Compose / Make (Recomendado)
 
-Sobe o container do Redis e o container da API de uma só vez:
-
+Inicie todos os serviços com:
 ```bash
-docker compose up --build
+make up-build
+# ou: docker compose up -d --build
 ```
 
 - **API FastAPI:** `http://localhost:8000`
 - **Documentação Swagger (OpenAPI):** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Redis Host Port:** `localhost:6380` (mapeada internamente para `6379`)
 
-Para parar os serviços:
+Para acompanhar os logs:
 ```bash
-docker compose down
+make logs
+```
+
+Para encerrar:
+```bash
+make down
 ```
 
 ---
 
 ### Opção 2: Execução Local (Desenvolvimento)
 
-1. **Suba apenas o serviço do Redis:**
+1. **Suba apenas o Redis:**
    ```bash
-   docker compose up -d redis
-   ```
-   *(Ou utilize uma instância local do Redis rodando na porta 6380).*
-
-2. **Instale as dependências com o Poetry:**
-   ```bash
-   poetry install
+   make redis-up
+   # ou: docker compose up -d redis
    ```
 
-3. **Inicie o servidor FastAPI em modo de desenvolvimento:**
+2. **Instale as dependências com Poetry:**
    ```bash
-   poetry run fastapi dev main.py
+   make install
+   # ou: poetry install
+   ```
+
+3. **Inicie o servidor FastAPI em modo dev:**
+   ```bash
+   make run-local
+   # ou: poetry run fastapi dev main.py
    ```
    *Nota: Por padrão, `app/redis_client.py` busca `REDIS_HOST=localhost` e `REDIS_PORT=6380` caso não sejam fornecidas variáveis de ambiente.*
+
+---
+
+## 🔍 Dicas para Estudo do Redis
+
+Abra outro terminal e utilize os comandos de inspeção em tempo real:
+
+1. **Acompanhar o tráfego do Redis em tempo real:**
+   ```bash
+   make redis-monitor
+   ```
+   *Faça requisições na API e veja comandos como `PING`, `GET`, `SET`, `INCR`, `EXPIRE`, `LPUSH` e `RPOP` sendo executados instantaneamente.*
+
+2. **Abrir o CLI interativo do Redis:**
+   ```bash
+   make redis-cli
+   ```
+   Exemplos de comandos para testar no CLI:
+   ```redis
+   KEYS *              # Lista todas as chaves ativas
+   TTL produto:1       # Mostra o tempo restante de vida do cache
+   LRANGE fila_emails 0 -1 # Visualiza todos os itens na fila
+   ```
+
+3. **Resetar o banco:**
+   ```bash
+   make flush-redis
+   ```
 
 ---
 
